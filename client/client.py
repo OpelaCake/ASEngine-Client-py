@@ -43,6 +43,13 @@ class ASEngineClient:
             self.sid = None
             print("Disconnected from server")
             
+        @self.sio.on('error', namespace=self.namespace)
+        def on_error(data):
+            print(f"Received error: {data}")
+            self.connected = False
+            self.sid = None
+
+
         # 响应事件
         @self.sio.on('response', namespace=self.namespace)
         def on_response(data):
@@ -133,45 +140,35 @@ class ASEngineClient:
             print(f"Failed to send text to route '{route}': {e}")
             return False
         
-    def send_voice(self, route: str, file_path: str) -> bool:
+    def send_voice(self, route: str, voice_data: bytes) -> bool:
         """
-        发送语音文件
+        发送语音数据
         :param route: 目标路由
-        :param file_path: 语音文件路径
+        :param voice_data: 语音数据字节流
         :return: 是否发送成功
         """
         if not self.connected:
             print("Not connected to server")
             return False
         
-        if route not in self.routes:
-            print(f"Route '{route}' not registered")
-            return False
-        
         try:
-            # 检查文件是否存在
-            if not os.path.exists(file_path):
-                print(f"File not found: {file_path}")
-                return False
-            
-            # 读取文件并进行base64编码
-            with open(file_path, 'rb') as f:
-                voice_data = base64.b64encode(f.read()).decode('utf-8')
-            
-            # 获取文件名
-            filename = os.path.basename(file_path)
+            # 编码语音数据为base64
+            # voice_data = 'data:image/jpeg;base64,' +base64.b64encode(voice_data).decode('utf-8')
             
             # 发送数据
             self.sio.emit(
                 route,
                 {
-                    'type': 'voice',
-                    'filename': filename,
-                    'data': voice_data
+                    'type': 'audio',
+                    'data': voice_data,
+                    'timestamp': int(time.time() * 1000),
+                    'sampleRate': 16000
                 },
                 namespace=self.namespace
             )
-            print(f"Sent voice file to route '{route}': {filename}")
+            
+
+            print(f"Sent voice file to route '{route}'")
             return True
         except Exception as e:
             print(f"Failed to send voice to route '{route}': {e}")
@@ -188,9 +185,6 @@ class ASEngineClient:
             print("Not connected to server")
             return False
         
-        if route not in self.routes:
-            print(f"Route '{route}' not registered")
-            return False
         
         try:
             # 检查文件是否存在
@@ -200,8 +194,8 @@ class ASEngineClient:
             
             # 读取文件并进行base64编码
             with open(file_path, 'rb') as f:
-                image_data = base64.b64encode(f.read()).decode('utf-8')
-            
+                image_data = 'data:image/jpeg;base64,' + base64.b64encode(f.read()).decode('utf-8')
+
             # 获取文件名
             filename = os.path.basename(file_path)
             
@@ -210,7 +204,6 @@ class ASEngineClient:
                 route,
                 {
                     'type': 'image',
-                    'filename': filename,
                     'data': image_data
                 },
                 namespace=self.namespace
