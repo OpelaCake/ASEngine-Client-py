@@ -1,4 +1,4 @@
-Example.py
+example.py
 ===========
 
 This file demonstrates how to use the ASEngine client.

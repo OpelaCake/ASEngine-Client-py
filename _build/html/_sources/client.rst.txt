@@ -1,9 +1,9 @@
-Client Class
+client.py
 ============
 
 This page documents the `ASEngineClient` in `client/client.py`.
 
 
 
-.. autoclass:: client.client.ASEngineClient
+.. autoclass:: ASEngineClient
    :members:
